@@ -38,6 +38,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <cfenv>
 
+#define PRINT_IN_OUT
+#define PRINT_IN_OUT_AS_HEX
+
+#ifndef PRINT_IN_OUT_AS_HEX
+	#define F2U(x) (x)
+	#define P_FORMAT "%f:%f "
+#else
+	#define F2U(x) f2u(x)
+	#define P_FORMAT "%0x:%0x "
+#endif
+
 extern "C" {
 
 	randomx_flags randomx_get_flags() {
@@ -346,6 +357,41 @@ extern "C" {
 		delete machine;
 	}
 
+	unsigned int f2u (double d) {
+		float pi = (float)M_PI;
+		union {
+			double d;
+			unsigned int u;
+		} f2u = { .d = d };
+
+		return f2u.u;
+	}
+
+	void debugPrint(uint64_t tempHash[8], randomx::RegisterFile* rf, int w, bool lastIter) {
+		printf("Iteration: %d\nInput: ", w);
+		for (int h = 0; h < 8; h++)
+			printf("%llx ", tempHash[h]);
+		printf("\n\nOutput:\n\tr: ");
+		for (int q = 0; q < 8; q++)
+			printf("%llx ", rf->r[q]);
+		printf("\n\tf: ");
+		for (int q = 0; q < 4; q++)
+			printf(P_FORMAT, F2U(rf->f[q].hi), F2U(rf->f[q].lo));
+		printf("\n\te: ");
+		for (int q = 0; q < 4; q++)
+			printf(P_FORMAT, F2U(rf->e[q].hi), F2U(rf->e[q].lo));
+		printf("\n\ta: ");
+		for (int q = 0; q < 4; q++)
+			printf(P_FORMAT, F2U(rf->a[q].hi), F2U(rf->a[q].lo));
+		if (lastIter) {
+			printf("\n==================================================================================\n");
+			printf("                                    NONCE DONE\n");
+			printf("==================================================================================\n\n");
+		} else
+			printf("\n==================================================================================\n\n");
+	}
+
+	int w = 0;
 	void randomx_calculate_hash(randomx_vm *machine, const void *input, size_t inputSize, void *output) {
 		assert(machine != nullptr);
 		assert(inputSize == 0 || input != nullptr);
@@ -359,10 +405,22 @@ extern "C" {
 		machine->resetRoundingMode();
 		for (int chain = 0; chain < RANDOMX_PROGRAM_COUNT - 1; ++chain) {
 			machine->run(&tempHash);
-			blakeResult = blake2b(tempHash, sizeof(tempHash), machine->getRegisterFile(), sizeof(randomx::RegisterFile), nullptr, 0);
+			randomx::RegisterFile* rf = machine->getRegisterFile();
+
+			#ifdef PRINT_IN_OUT
+			debugPrint(tempHash, rf, w++, false);
+			#endif
+
+			blakeResult = blake2b(tempHash, sizeof(tempHash), rf, sizeof(randomx::RegisterFile), nullptr, 0);
 			assert(blakeResult == 0);
+
 		}
 		machine->run(&tempHash);
+
+		#ifdef PRINT_IN_OUT
+		debugPrint(tempHash, machine->getRegisterFile(), w++, true);
+		#endif
+
 		machine->getFinalResult(output, RANDOMX_HASH_SIZE);
 		fesetenv(&fpstate);
 	}

@@ -74,7 +74,7 @@
 # x15 -> "r7"
 # x16 -> spAddr0
 # x17 -> spAddr1
-# x18 -> temporary
+# x18 -> RESERVED! DO NOT TOUCH!
 # x19 -> temporary
 # x20 -> literal for IMUL_RCP
 # x21 -> literal for IMUL_RCP
@@ -111,7 +111,7 @@ DECL(randomx_program_aarch64):
 	# Save callee-saved registers
 	sub	sp, sp, 192
 	stp	x16, x17, [sp]
-	stp	x18, x19, [sp, 16]
+	str	x19, [sp, 16]
 	stp	x20, x21, [sp, 32]
 	stp	x22, x23, [sp, 48]
 	stp	x24, x25, [sp, 64]
@@ -196,13 +196,14 @@ DECL(randomx_program_aarch64):
 	ldr	q15, literal_v15
 
 DECL(randomx_program_aarch64_main_loop):
+	str x11, [sp, 24]
 	# spAddr0 = spMix1 & ScratchpadL3Mask64;
 	# spAddr1 = (spMix1 >> 32) & ScratchpadL3Mask64;
-	lsr	x18, x10, 32
+	lsr	x11, x10, 32
 
 	# Actual mask will be inserted by JIT compiler
 	and	w16, w10, 1
-	and	w17, w18, 1
+	and	w17, w11, 1
 
 	# x16 = scratchpad + spAddr0
 	# x17 = scratchpad + spAddr1
@@ -210,31 +211,31 @@ DECL(randomx_program_aarch64_main_loop):
 	add	x17, x17, x2
 
 	# xor integer registers with scratchpad data (spAddr0)
-	ldp	x18, x19, [x16]
-	eor	x4, x4, x18
+	ldp	x11, x19, [x16]
+	eor	x4, x4, x11
 	eor	x5, x5, x19
-	ldp	x18, x19, [x16, 16]
-	eor	x6, x6, x18
+	ldp	x11, x19, [x16, 16]
+	eor	x6, x6, x11
 	eor	x7, x7, x19
-	ldp	x18, x19, [x16, 32]
-	eor	x12, x12, x18
+	ldp	x11, x19, [x16, 32]
+	eor	x12, x12, x11
 	eor	x13, x13, x19
-	ldp	x18, x19, [x16, 48]
-	eor	x14, x14, x18
+	ldp	x11, x19, [x16, 48]
+	eor	x14, x14, x11
 	eor	x15, x15, x19
 
 	# Load group F registers (spAddr1)
-	ldpsw	x18, x19, [x17]
-	ins	v16.d[0], x18
+	ldpsw	x11, x19, [x17]
+	ins	v16.d[0], x11
 	ins	v16.d[1], x19
-	ldpsw	x18, x19, [x17, 8]
-	ins	v17.d[0], x18
+	ldpsw	x11, x19, [x17, 8]
+	ins	v17.d[0], x11
 	ins	v17.d[1], x19
-	ldpsw	x18, x19, [x17, 16]
-	ins	v18.d[0], x18
+	ldpsw	x11, x19, [x17, 16]
+	ins	v18.d[0], x11
 	ins	v18.d[1], x19
-	ldpsw	x18, x19, [x17, 24]
-	ins	v19.d[0], x18
+	ldpsw	x11, x19, [x17, 24]
+	ins	v19.d[0], x11
 	ins	v19.d[1], x19
 	scvtf	v16.2d, v16.2d
 	scvtf	v17.2d, v17.2d
@@ -242,17 +243,17 @@ DECL(randomx_program_aarch64_main_loop):
 	scvtf	v19.2d, v19.2d
 
 	# Load group E registers (spAddr1)
-	ldpsw	x18, x19, [x17, 32]
-	ins	v20.d[0], x18
+	ldpsw	x11, x19, [x17, 32]
+	ins	v20.d[0], x11
 	ins	v20.d[1], x19
-	ldpsw	x18, x19, [x17, 40]
-	ins	v21.d[0], x18
+	ldpsw	x11, x19, [x17, 40]
+	ins	v21.d[0], x11
 	ins	v21.d[1], x19
-	ldpsw	x18, x19, [x17, 48]
-	ins	v22.d[0], x18
+	ldpsw	x11, x19, [x17, 48]
+	ins	v22.d[0], x11
 	ins	v22.d[1], x19
-	ldpsw	x18, x19, [x17, 56]
-	ins	v23.d[0], x18
+	ldpsw	x11, x19, [x17, 56]
+	ins	v23.d[0], x11
 	ins	v23.d[1], x19
 	scvtf	v20.2d, v20.2d
 	scvtf	v21.2d, v21.2d
@@ -266,6 +267,8 @@ DECL(randomx_program_aarch64_main_loop):
 	orr	v21.16b, v21.16b, v30.16b
 	orr	v22.16b, v22.16b, v30.16b
 	orr	v23.16b, v23.16b, v30.16b
+
+	ldr x11, [sp, 24]
 
 	# Execute VM instructions
 DECL(randomx_program_aarch64_vm_instructions):
@@ -332,19 +335,23 @@ DECL(randomx_program_aarch64_cacheline_align_mask2):
 	add	x10, x10, x1
 
 DECL(randomx_program_aarch64_xor_with_dataset_line):
+	str x11, [sp, 24]
+
 	# xor integer registers with dataset data
-	ldp	x18, x19, [x10]
-	eor	x4, x4, x18
+	ldp	x11, x19, [x10]
+	eor	x4, x4, x11
 	eor	x5, x5, x19
-	ldp	x18, x19, [x10, 16]
-	eor	x6, x6, x18
+	ldp	x11, x19, [x10, 16]
+	eor	x6, x6, x11
 	eor	x7, x7, x19
-	ldp	x18, x19, [x10, 32]
-	eor	x12, x12, x18
+	ldp	x11, x19, [x10, 32]
+	eor	x12, x12, x11
 	eor	x13, x13, x19
-	ldp	x18, x19, [x10, 48]
-	eor	x14, x14, x18
+	ldp	x11, x19, [x10, 48]
+	eor	x14, x14, x11
 	eor	x15, x15, x19
+
+	ldr x11, [sp, 24]
 
 DECL(randomx_program_aarch64_update_spMix1):
 	# JIT compiler will replace it with "eor x10, config.readReg0, config.readReg1"
@@ -386,7 +393,7 @@ DECL(randomx_program_aarch64_update_spMix1):
 
 	# Restore callee-saved registers
 	ldp	x16, x17, [sp]
-	ldp	x18, x19, [sp, 16]
+	ldr	x19, [sp, 16]
 	ldp	x20, x21, [sp, 32]
 	ldp	x22, x23, [sp, 48]
 	ldp	x24, x25, [sp, 64]
@@ -407,7 +414,7 @@ DECL(randomx_program_aarch64_vm_instructions_end_light):
 	stp	x2, x30, [sp, 80]
 
 	# mx ^= r[readReg2] ^ r[readReg3];
-	eor	x9, x9, x18
+	eor	x9, x9, x19
 
 	# mx <-> ma
 	ror	x9, x9, 32
