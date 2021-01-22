@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <cfenv>
 
-#define PRINT_IN_OUT
+//#define PRINT_IN_OUT
 #define PRINT_IN_OUT_AS_HEX
 
 #ifndef PRINT_IN_OUT_AS_HEX

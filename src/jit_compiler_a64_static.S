@@ -76,7 +76,7 @@
 # x17 -> spAddr1
 # x18 -> RESERVED! DO NOT TOUCH!
 # x19 -> temporary
-# x20 -> literal for IMUL_RCP
+# x20 -> temporary
 # x21 -> literal for IMUL_RCP
 # x22 -> literal for IMUL_RCP
 # x23 -> literal for IMUL_RCP
@@ -111,8 +111,8 @@ DECL(randomx_program_aarch64):
 	# Save callee-saved registers
 	sub	sp, sp, 192
 	stp	x16, x17, [sp]
-	str	x19, [sp, 16]
-	stp	x20, x21, [sp, 32]
+	stp	x19, x20, [sp, 16]
+	str	x21, [sp, 32]
 	stp	x22, x23, [sp, 48]
 	stp	x24, x25, [sp, 64]
 	stp	x26, x27, [sp, 80]
@@ -166,7 +166,6 @@ DECL(randomx_program_aarch64):
 	# Read literals
 	ldr	x0, literal_x0
 	ldr	x11, literal_x11
-	ldr	x20, literal_x20
 	ldr	x21, literal_x21
 	ldr	x22, literal_x22
 	ldr	x23, literal_x23
@@ -196,14 +195,13 @@ DECL(randomx_program_aarch64):
 	ldr	q15, literal_v15
 
 DECL(randomx_program_aarch64_main_loop):
-	str x11, [sp, 24]
 	# spAddr0 = spMix1 & ScratchpadL3Mask64;
 	# spAddr1 = (spMix1 >> 32) & ScratchpadL3Mask64;
-	lsr	x11, x10, 32
+	lsr	x19, x10, 32
 
 	# Actual mask will be inserted by JIT compiler
 	and	w16, w10, 1
-	and	w17, w11, 1
+	and	w17, w18, 1
 
 	# x16 = scratchpad + spAddr0
 	# x17 = scratchpad + spAddr1
@@ -211,50 +209,50 @@ DECL(randomx_program_aarch64_main_loop):
 	add	x17, x17, x2
 
 	# xor integer registers with scratchpad data (spAddr0)
-	ldp	x11, x19, [x16]
-	eor	x4, x4, x11
-	eor	x5, x5, x19
-	ldp	x11, x19, [x16, 16]
-	eor	x6, x6, x11
-	eor	x7, x7, x19
-	ldp	x11, x19, [x16, 32]
-	eor	x12, x12, x11
-	eor	x13, x13, x19
-	ldp	x11, x19, [x16, 48]
-	eor	x14, x14, x11
-	eor	x15, x15, x19
+	ldp	x19, x20, [x16]
+	eor	x4, x4, x19
+	eor	x5, x5, x20
+	ldp	x19, x20, [x16, 16]
+	eor	x6, x6, x19
+	eor	x7, x7, x20
+	ldp	x19, x20, [x16, 32]
+	eor	x12, x12, x19
+	eor	x13, x13, x20
+	ldp	x19, x20, [x16, 48]
+	eor	x14, x14, x19
+	eor	x15, x15, x20
 
 	# Load group F registers (spAddr1)
-	ldpsw	x11, x19, [x17]
-	ins	v16.d[0], x11
-	ins	v16.d[1], x19
-	ldpsw	x11, x19, [x17, 8]
-	ins	v17.d[0], x11
-	ins	v17.d[1], x19
-	ldpsw	x11, x19, [x17, 16]
-	ins	v18.d[0], x11
-	ins	v18.d[1], x19
-	ldpsw	x11, x19, [x17, 24]
-	ins	v19.d[0], x11
-	ins	v19.d[1], x19
+	ldpsw	x19, x20, [x17]
+	ins	v16.d[0], x19
+	ins	v16.d[1], x20
+	ldpsw	x19, x20, [x17, 8]
+	ins	v17.d[0], x19
+	ins	v17.d[1], x20
+	ldpsw	x19, x20, [x17, 16]
+	ins	v18.d[0], x19
+	ins	v18.d[1], x20
+	ldpsw	x19, x20, [x17, 24]
+	ins	v19.d[0], x19
+	ins	v19.d[1], x20
 	scvtf	v16.2d, v16.2d
 	scvtf	v17.2d, v17.2d
 	scvtf	v18.2d, v18.2d
 	scvtf	v19.2d, v19.2d
 
 	# Load group E registers (spAddr1)
-	ldpsw	x11, x19, [x17, 32]
-	ins	v20.d[0], x11
-	ins	v20.d[1], x19
-	ldpsw	x11, x19, [x17, 40]
-	ins	v21.d[0], x11
-	ins	v21.d[1], x19
-	ldpsw	x11, x19, [x17, 48]
-	ins	v22.d[0], x11
-	ins	v22.d[1], x19
-	ldpsw	x11, x19, [x17, 56]
-	ins	v23.d[0], x11
-	ins	v23.d[1], x19
+	ldpsw	x19, x20, [x17, 32]
+	ins	v20.d[0], x19
+	ins	v20.d[1], x20
+	ldpsw	x19, x20, [x17, 40]
+	ins	v21.d[0], x19
+	ins	v21.d[1], x20
+	ldpsw	x19, x20, [x17, 48]
+	ins	v22.d[0], x19
+	ins	v22.d[1], x20
+	ldpsw	x19, x20, [x17, 56]
+	ins	v23.d[0], x19
+	ins	v23.d[1], x20
 	scvtf	v20.2d, v20.2d
 	scvtf	v21.2d, v21.2d
 	scvtf	v22.2d, v22.2d
@@ -268,8 +266,6 @@ DECL(randomx_program_aarch64_main_loop):
 	orr	v22.16b, v22.16b, v30.16b
 	orr	v23.16b, v23.16b, v30.16b
 
-	ldr x11, [sp, 24]
-
 	# Execute VM instructions
 DECL(randomx_program_aarch64_vm_instructions):
 
@@ -279,7 +275,6 @@ DECL(randomx_program_aarch64_vm_instructions):
 
 literal_x0:  .fill 1,8,0
 literal_x11: .fill 1,8,0
-literal_x20: .fill 1,8,0
 literal_x21: .fill 1,8,0
 literal_x22: .fill 1,8,0
 literal_x23: .fill 1,8,0
@@ -312,17 +307,17 @@ literal_v15: .fill 2,8,0
 DECL(randomx_program_aarch64_vm_instructions_end):
 
 	# mx ^= r[readReg2] ^ r[readReg3];
-	eor	x9, x9, x18
+	eor	x9, x9, x19
 
 	# Calculate dataset pointer for dataset prefetch
 	mov	w18, w9
 DECL(randomx_program_aarch64_cacheline_align_mask1):
 	# Actual mask will be inserted by JIT compiler
-	and	x18, x18, 1
-	add	x18, x18, x1
+	and	x19, x19, 1
+	add	x19, x19, x1
 
 	# Prefetch dataset data
-	prfm	pldl2strm, [x18]
+	prfm	pldl2strm, [x19]
 
 	# mx <-> ma
 	ror	x9, x9, 32
@@ -335,23 +330,19 @@ DECL(randomx_program_aarch64_cacheline_align_mask2):
 	add	x10, x10, x1
 
 DECL(randomx_program_aarch64_xor_with_dataset_line):
-	str x11, [sp, 24]
-
 	# xor integer registers with dataset data
-	ldp	x11, x19, [x10]
-	eor	x4, x4, x11
-	eor	x5, x5, x19
-	ldp	x11, x19, [x10, 16]
-	eor	x6, x6, x11
-	eor	x7, x7, x19
-	ldp	x11, x19, [x10, 32]
-	eor	x12, x12, x11
-	eor	x13, x13, x19
-	ldp	x11, x19, [x10, 48]
-	eor	x14, x14, x11
-	eor	x15, x15, x19
-
-	ldr x11, [sp, 24]
+	ldp	x19, x20, [x10]
+	eor	x4, x4, x19
+	eor	x5, x5, x20
+	ldp	x19, x20, [x10, 16]
+	eor	x6, x6, x19
+	eor	x7, x7, x20
+	ldp	x19, x20, [x10, 32]
+	eor	x12, x12, x19
+	eor	x13, x13, x20
+	ldp	x19, x20, [x10, 48]
+	eor	x14, x14, x19
+	eor	x15, x15, x20
 
 DECL(randomx_program_aarch64_update_spMix1):
 	# JIT compiler will replace it with "eor x10, config.readReg0, config.readReg1"
@@ -393,8 +384,8 @@ DECL(randomx_program_aarch64_update_spMix1):
 
 	# Restore callee-saved registers
 	ldp	x16, x17, [sp]
-	ldr	x19, [sp, 16]
-	ldp	x20, x21, [sp, 32]
+	ldp	x19, x20, [sp, 16]
+	ldr x21, [sp, 32]
 	ldp	x22, x23, [sp, 48]
 	ldp	x24, x25, [sp, 64]
 	ldp	x26, x27, [sp, 80]

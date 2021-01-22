@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #define DUMP_PROGRAM
-#define DUMP_INDEX (9)
+#define DUMP_INDEX (0)
 
 namespace ARMV8A {
 
@@ -178,13 +178,13 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 int w = 0;
 void JitCompilerA64::generateProgramLight(Program& program, ProgramConfiguration& config, uint32_t datasetOffset)
 {
-	uint32_t codePos = MainLoopBegin + 8;
+	uint32_t codePos = MainLoopBegin + 4;
 
 	// and w16, w10, ScratchpadL3Mask64
 	emit32(0x121A0000 | 16 | (10 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
 
-	// and w17, w11, ScratchpadL3Mask64
-	emit32(0x121A0000 | 17 | (11 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
+	// and w17, w19, ScratchpadL3Mask64
+	emit32(0x121A0000 | 17 | (19 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
 
 	codePos = PrologueSize;
 	literalPos = ImulRcpLiteralsEnd;
@@ -726,9 +726,9 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, uint32_t& codePos)
 	literalPos -= sizeof(uint64_t);
 	*(uint64_t*)(code + literalPos) = (q << shift) + ((r << shift) / divisor);
 
-	if (literal_id < 13)
+	if (literal_id < 12)
 	{
-		static constexpr uint32_t literal_regs[13] = { 30 << 16, 29 << 16, 28 << 16, 27 << 16, 26 << 16, 25 << 16, 24 << 16, 23 << 16, 22 << 16, 21 << 16, 20 << 16, 11 << 16, 0 };
+		static constexpr uint32_t literal_regs[12] = { 30 << 16, 29 << 16, 28 << 16, 27 << 16, 26 << 16, 25 << 16, 24 << 16, 23 << 16, 22 << 16, 21 << 16, 11 << 16, 0 };
 
 		// mul dst, dst, literal_reg
 		emit32(ARMV8A::MUL | dst | (dst << 5) | literal_regs[literal_id], code, k);
