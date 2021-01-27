@@ -201,7 +201,7 @@ DECL(randomx_program_aarch64_main_loop):
 
 	# Actual mask will be inserted by JIT compiler
 	and	w16, w10, 1
-	and	w17, w18, 1
+	and	w17, w19, 1
 
 	# x16 = scratchpad + spAddr0
 	# x17 = scratchpad + spAddr1

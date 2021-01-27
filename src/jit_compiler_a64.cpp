@@ -130,8 +130,8 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 	// and w16, w10, ScratchpadL3Mask64
 	emit32(0x121A0000 | 16 | (10 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
 
-	// and w17, w18, ScratchpadL3Mask64
-	emit32(0x121A0000 | 17 | (18 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
+	// and w17, w19, ScratchpadL3Mask64
+	emit32(0x121A0000 | 17 | (19 << 5) | ((Log2(RANDOMX_SCRATCHPAD_L3) - 7) << 10), code, codePos);
 
 	codePos = PrologueSize;
 	literalPos = ImulRcpLiteralsEnd;
@@ -149,16 +149,16 @@ void JitCompilerA64::generateProgram(Program& program, ProgramConfiguration& con
 	}
 
 	// Update spMix2
-	// eor w18, config.readReg2, config.readReg3
-	emit32(ARMV8A::EOR32 | 18 | (IntRegMap[config.readReg2] << 5) | (IntRegMap[config.readReg3] << 16), code, codePos);
+	// eor w19, config.readReg2, config.readReg3
+	emit32(ARMV8A::EOR32 | 19 | (IntRegMap[config.readReg2] << 5) | (IntRegMap[config.readReg3] << 16), code, codePos);
 
 	// Jump back to the main loop
 	const uint32_t offset = (((uint8_t*)randomx_program_aarch64_vm_instructions_end) - ((uint8_t*)randomx_program_aarch64)) - codePos;
 	emit32(ARMV8A::B | (offset / 4), code, codePos);
 
-	// and w18, w18, CacheLineAlignMask
+	// and w19, w19, CacheLineAlignMask
 	codePos = (((uint8_t*)randomx_program_aarch64_cacheline_align_mask1) - ((uint8_t*)randomx_program_aarch64));
-	emit32(0x121A0000 | 18 | (18 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
+	emit32(0x121A0000 | 19 | (19 << 5) | ((Log2(RANDOMX_DATASET_BASE_SIZE) - 7) << 10), code, codePos);
 
 	// and w10, w10, CacheLineAlignMask
 	codePos = (((uint8_t*)randomx_program_aarch64_cacheline_align_mask2) - ((uint8_t*)randomx_program_aarch64));
