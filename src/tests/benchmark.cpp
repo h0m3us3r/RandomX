@@ -184,10 +184,10 @@ void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result
 }
 
 int main(int argc, char** argv) {
-	daemon(0,0);
+	//daemon(0,0);
 	setJetsam(getpid());
-	freopen("/dev/console", "w", stdout);
-	freopen("/dev/console", "w", stderr);
+	//freopen("/dev/console", "w", stdout);
+	//freopen("/dev/console", "w", stderr);
 	printf("PID: %d\n", getpid());
 	bool softAes, miningMode, verificationMode, help, largePages, jit, secure;
 	bool ssse3, avx2, autoFlags, noBatch;
