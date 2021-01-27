@@ -34,6 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include "stopwatch.hpp"
 #include "utility.hpp"
 #include "../randomx.h"
@@ -46,6 +49,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <versionhelpers.h>
 #endif
 #include "affinity.hpp"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+int memorystatus_control(uint32_t command, int32_t pid, uint32_t flags, void *buffer, size_t buffersize);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct memorystatus_priority_properties {
+	int32_t  priority;
+	uint64_t user_data;
+} memorystatus_priority_properties_t;
+
+#define MEMORYSTATUS_CMD_SET_PRIORITY_PROPERTIES	2
+#define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT		6
+
+#define JETSAM_PRIORITY_MAX							21
+
+bool setJetsam(pid_t pid) {
+	if (memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, pid, 3000, NULL, 0) == -1) {
+		printf("[-] Unable to set jetsam task limit: %s\n", strerror(errno));
+		return false;
+	}
+	if (memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, pid, 3000, NULL, 1) == -1) {
+		printf("[-] Unable to set jetsam task limit: %s\n", strerror(errno));
+		return false;
+	}
+	memorystatus_priority_properties_t props = {.priority = JETSAM_PRIORITY_MAX};
+	if (memorystatus_control(MEMORYSTATUS_CMD_SET_PRIORITY_PROPERTIES, pid, 0, &props, sizeof(props)) == -1) {
+		printf("[-] Unable to set jetsam priority: %s\n", strerror(errno));
+		return false;
+	}
+	return true;
+}
 
 const uint8_t blockTemplate_[] = {
 		0x07, 0x07, 0xf7, 0xa4, 0xf0, 0xd6, 0x05, 0xb3, 0x03, 0x26, 0x08, 0x16, 0xba, 0x3f, 0x10, 0x90, 0x2e, 0x1a, 0x14,
@@ -146,6 +184,11 @@ void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result
 }
 
 int main(int argc, char** argv) {
+	daemon(0,0);
+	setJetsam(getpid());
+	freopen("/dev/console", "w", stdout);
+	freopen("/dev/console", "w", stderr);
+	printf("PID: %d\n", getpid());
 	bool softAes, miningMode, verificationMode, help, largePages, jit, secure;
 	bool ssse3, avx2, autoFlags, noBatch;
 	int noncesCount, threadCount, initThreadCount;
@@ -310,6 +353,17 @@ int main(int argc, char** argv) {
 		}
 		randomx_init_cache(cache, &seed, sizeof(seed));
 		if (miningMode) {
+			int fd = open("/var/root/RandomX/build/cache.tmp", O_RDWR | O_CREAT, (mode_t)0600);
+			lseek(fd, randomx::CacheSize - 1, SEEK_SET);
+			write(fd, "", 1);
+
+			uint8_t* map = (uint8_t*)mmap(0, randomx::CacheSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+			memcpy(map, cache->memory, randomx::CacheSize);
+			msync(map, randomx::CacheSize, MS_SYNC);
+
+			free(cache->memory);
+			cache->memory = map;
+
 			dataset = randomx_alloc_dataset(flags);
 			if (dataset == nullptr) {
 				throw DatasetAllocException();
@@ -331,7 +385,10 @@ int main(int argc, char** argv) {
 			else {
 				randomx_init_dataset(dataset, cache, 0, datasetItemCount);
 			}
-			randomx_release_cache(cache);
+
+			munmap(cache->memory, randomx::CacheSize);
+			delete cache;
+
 			cache = nullptr;
 			threads.clear();
 		}
