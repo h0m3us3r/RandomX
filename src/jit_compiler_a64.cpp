@@ -713,7 +713,7 @@ void JitCompilerA64::h_IMUL_RCP(Instruction& instr, uint32_t& codePos)
 	literalPos -= sizeof(uint64_t);
 	*(uint64_t*)(code + literalPos) = (q << shift) + ((r << shift) / divisor);
 
-	if (literal_id < 13)
+	if (literal_id < 12)
 	{
 		static constexpr uint32_t literal_regs[13] = { 30 << 16, 29 << 16, 28 << 16, 27 << 16, 26 << 16, 25 << 16, 24 << 16, 23 << 16, 22 << 16, 21 << 16, 20 << 16, 11 << 16, 0 };
 
